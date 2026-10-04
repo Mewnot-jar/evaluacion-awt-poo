@@ -73,5 +73,31 @@ public class VentanaClub extends Frame{
         panelFormulario.add(chkSpa);
 
         add(panelFormulario, BorderLayout.NORTH);
+
+        // ------------ AREA DE REPORTE (CENTER) ------------
+        txtReporte = new TextArea("", 15, 60, TextArea.SCROLLBARS_VERTICAL_ONLY);
+        txtReporte.setEditable(false);
+        txtReporte.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        add(txtReporte, BorderLayout.CENTER);
+
+        // ------------ PANEL DE BOTONES (SOUTH) ------------
+        Panel panelBotones = new Panel(new FlowLayout());
+        btnRegistrar = new Button("Registrar y Calcular");
+        btnLimpiar = new Button("Limpiar");
+        panelBotones.add(btnRegistrar);
+        panelBotones.add(btnLimpiar);
+        add(panelBotones, BorderLayout.SOUTH);
+
+        // ------------ CIERRE DE VENTANA ------------
+        addWindowListener(new WindowAdapter() {
+            @Override 
+            public void windowClosing(WindowEvent e){
+                dispose();
+                System.exit(0);
+            }
+        });
+
+        setLocationRelativeTo(null);
+        setVisible(true);
     }
 }
