@@ -88,6 +88,19 @@ public class VentanaClub extends Frame{
         panelBotones.add(btnLimpiar);
         add(panelBotones, BorderLayout.SOUTH);
 
+        // ------------ EVENTOS ------------
+        btnRegistrar.addActionListener(e -> registrarSocio());
+        btnLimpiar.addActionListener(e -> limpiarFormulario());
+
+        // Escuchamos si el choice cambia - Si cambia a vip (osea index = 1) chkSpa.setEnabled(true) habilitamos el check de spa
+        chCategoria.addItemListener(e -> {
+            boolean esVip = chCategoria.getSelectedIndex() == 1;
+            chkSpa.setEnabled(esVip);
+            if(!esVip){
+                chkSpa.setEnabled(false);
+            }
+        });
+
         // ------------ CIERRE DE VENTANA ------------
         addWindowListener(new WindowAdapter() {
             @Override 
@@ -99,5 +112,124 @@ public class VentanaClub extends Frame{
 
         setLocationRelativeTo(null);
         setVisible(true);
+    }
+
+    private void registrarSocio(){
+        String nombre = txtNombre.getText().trim();
+        String rut = txtRut.getText().trim();
+        String textoEdad = txtEdad.getText().trim();
+        
+        if(nombre.isEmpty() || rut.isEmpty() || textoEdad.isEmpty()){
+            mostrarAlerta("Error: Debe completar todos los campos.");
+            return;
+        }
+
+        int edad;
+
+        try {
+            edad = Integer.parseInt(textoEdad);
+        } catch (NumberFormatException e) {
+            mostrarAlerta("Error: La edad debe ser un numero entero.");
+            return;
+        }
+
+        if(edad < 18){
+            txtReporte.setText("Error: El socio debe ser mayor de edad.\n" + "No se realizo el registro.");
+            mostrarAlerta("Error: El socio debe ser mayor de edad.");
+            return;
+        }
+        int tipo = chCategoria.getSelectedIndex() + 1;
+        Socio socio;
+
+        switch (tipo) {
+            case 1:
+                double descuento = 10;
+                socio = new SocioRegular(rut, nombre, edad, Socio.CUOTA_BASE_DEFECTO, descuento);
+                break;
+            case 2:
+                boolean spa = chkSpa.getState();
+                socio = new SocioVIP(rut, nombre, edad, Socio.CUOTA_BASE_DEFECTO, spa);
+                break;
+            default:
+                mostrarAlerta("Error: Categoria no valida");
+                return;
+        }
+
+        double cuotaMensual = socio.calcularCuotaFinal();
+        if(chkCasillero.getState()){
+            cuotaMensual += MONTO_CASILLERO;
+        }
+
+        int meses = Integer.parseInt(chMeses.getSelectedItem());
+
+        String reporte = "------- SOCIO REGISTRADO -------\n";
+        reporte += socio.obtenerResumen();
+        reporte += "Casillero/Toalla: "
+                    + (chkCasillero.getState() ? "Si (+$" + MONTO_CASILLERO + ")" : "No")
+                    + "\n";
+        reporte += "----------------------------";
+        reporte += "CUOTA MENSUAL TOTAL: $" + cuotaMensual + "\n\n";
+        reporte += generarProyeccion(cuotaMensual, meses);
+
+        txtReporte.setText(reporte);
+    }
+
+    /**
+     * Calcula la proyección de pagos mes a mes
+     * usando un bucle for, acumulando el total pagado.
+     *
+     * @param cuotaMensual monto que se paga cada mes
+     * @param meses        cantidad de meses a proyectar (6 o 12)
+     * @return texto con el desglose mes a mes y el total
+     */
+    private String generarProyeccion(double cuotaMensual, int meses){
+        String texto = "------- PROYECCION A " + meses + " -------\n";
+        double acumulado = 0;
+
+        for(int mes=1; mes<=meses; mes++){
+            acumulado += cuotaMensual;
+            texto += String.format("Mes %2d: $%,9.0f | Acumulado: $%,10.0f\n", mes, cuotaMensual, acumulado);
+        }
+        texto += "---------------------\n";
+        texto += "TOTAL A PAGAR EN " + meses + " MESES: $" + acumulado + "\n";
+        return texto;
+    }
+    private void limpiarFormulario(){
+        txtNombre.setText("");
+        txtRut.setText("");
+        txtEdad.setText("");
+        chCategoria.select(0);   // vuelve a "Regular"
+        chMeses.select(0);       // vuelve a "6"
+        chkCasillero.setState(false);
+        chkSpa.setState(false);
+        chkSpa.setEnabled(false);
+        txtReporte.setText("");
+        txtNombre.requestFocus(); // deja el cursor en el nombre
+    }
+    /**
+     * Muestra una ventana de alerta con un mensaje.
+     * AWT no tiene JOptionPane (eso es de Swing), así que se arma con Dialog.
+     *
+     * @param mensaje texto a mostrar en la alerta
+     */
+    private void mostrarAlerta(String mensaje){
+        Dialog dialogo = new Dialog(this, "Alerta", true);
+        dialogo.setLayout(new FlowLayout());
+        dialogo.add(new Label(mensaje));
+
+        Button btnAceptar = new Button("Aceptar");
+        btnAceptar.addActionListener(e -> dialogo.dispose());
+        dialogo.add(btnAceptar);
+
+        dialogo.addWindowListener(new WindowAdapter(){
+            @Override 
+            public void windowClosing(WindowEvent e){
+                dialogo.dispose();
+            }
+        });
+
+        dialogo.setSize(380, 120);
+        dialogo.setLocationRelativeTo(this);
+        dialogo.setVisible(true);
     }
 }
